@@ -7,12 +7,19 @@ import yfinance as yf
 import warnings
 warnings.filterwarnings('ignore')
 
+
 # 2. Парсим с Wikipedia список тикеров всех компаний из S&P 500
-url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-df = pd.read_html(url)[0]
-ticker_dict = (
-    {security: [symbol, sector, location] for security, symbol, sector, location in zip(df['Security'], df['Symbol'], df['GICS Sector'], df['Headquarters Location'])}
-)
+@st.cache_data
+def load_sp500_list() -> dict:
+    df = pd.read_html("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")[0]
+    return {
+        security: [symbol, sector, location]
+        for security, symbol, sector, location
+        in zip(df['Security'], df['Symbol'], df['GICS Sector'], df['Headquarters Location'])
+    }
+
+ticker_dict = load_sp500_list()
+
 
 # 3. Виджет выбора компании
 selected_ticker = st.sidebar.selectbox('Выберите компанию:', ticker_dict)
@@ -20,7 +27,7 @@ selected_ticker = st.sidebar.selectbox('Выберите компанию:', tic
 # 4. Виджет выбора периода отображения графиков
 selected_period = (
     st.sidebar.date_input(
-        label='Выберите период:', value=['2015-01-01', '2025-01-01'], 
+        label='Выберите период:', value=['2024-01-01', '2025-01-01'], 
         min_value='2015-01-01', max_value='2025-05-31')
 )
 
@@ -40,7 +47,7 @@ else:
     """)
     
     tickerSymbol = ticker_dict.get(selected_ticker)[0]
-    tickerData = yf.Ticker(tickerSymbol)
+    tickerData = yf.Ticker('GOOGL')
     tickerDf = tickerData.history(period='1d', start=str(start), end=str(end))
 
     st.write('## Стоимость акции')
